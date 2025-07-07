@@ -1,5 +1,6 @@
 import os
-
+import google.generativeai as genai
+from google.genai import types
 
 
 def get_files_info(working_directory, directory=None):
@@ -32,3 +33,10 @@ def get_files_info(working_directory, directory=None):
 
     except Exception as e:
         return f"Error: {str(e)}"
+
+
+
+
+
+
+
