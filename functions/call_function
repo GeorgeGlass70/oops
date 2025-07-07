@@ -1,0 +1,49 @@
+
+
+
+
+
+def call_function(function_call_part, verbose=False):
+    function_call_part = function_call_part.name
+    function_args = dict(function_call_part.args)
+
+    function_args["working_directory"] = "./calculator"
+
+    if verbose:
+        print(f"Calling function: {function_call_part.name}({function_call_part.args})")
+
+    else:
+        print(f" - Calling function: {function_call_part.name}")
+
+
+    func = FUNCTION_MAP.get(function_name)
+    if func is None:
+        return types.Content(
+        role="tool",
+        parts=[
+            types.Part.from_function_response(
+                name=function_name,
+                response={"error": f"Unknown function: {function_name}"},
+            )
+        ],
+    )
+
+
+
+    try:
+        function_result = func(**function_args)
+    except Exception as e:
+        function_result = f"Exception during execution: {str(e)}"
+
+    return types.Content(
+        role="tool",
+        parts=[
+            types.Part.from_function_response(
+                name=function_name,
+                response={"result": function_result},
+            )
+        ],
+    )
+
+
+

@@ -3,8 +3,9 @@ import os
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
+from prompts import system_prompt
+from call_function import call_function, available_functions
 
-from call_function import available_functions
 
 
 load_dotenv()
@@ -30,18 +31,12 @@ def main():
     messages = [
         types.Content(role = "user", parts = [types.Part(text = prompt)]),
 ]
+    generate_content(client, messages, verbose)
 
 
-    system_prompt = system_prompt = """
-You are a helpful AI coding agent.
 
-When a user asks a question or makes a request, make a function call plan. You can perform the following operations:
 
-- List files and directories
-
-All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
-"""
-
+def generate_content(client, messages, verbose):
     response = client.models.generate_content(
     model = 'gemini-2.0-flash-001',
     contents = messages,
@@ -54,18 +49,27 @@ All paths you provide should be relative to the working directory. You do not ne
 
 
     if verbose:
-        print(f"User prompt: {prompt}")
+        print(f"User prompt: {messages[-1].parts[0].text if messages and messages[-1].parts else 'N/A'}")
         x = response.usage_metadata.prompt_token_count
         y = response.usage_metadata.candidates_token_count
         print(f"Prompt tokens: "+ str(x))
         print(f"Response tokens: "+ str(y))
 
-    if response.function_calls:
-        for function_call_part in response.function_calls:
-            print(f"Calling function: {function_call_part.name}({function_call_part.args})")
-    else:
-        print(response.text)
-    
+    if not response.function_calls:
+        return response.txt
+
+    for function_call_part in response.function_calls:
+        function_call_result = call_function(function_call_part, verbose=verbose)
+
+        try:
+            function_response = function_call_result.parts[0].function_response.response
+        except (AttributeError, IndexError):
+            raise RuntimeError("Function response missing or malformed in returned content.")
+
+        if verbose:
+            print(f"-> {function_response}")
+
+    return function_call_result
 
 
 if __name__ == "__main__":
