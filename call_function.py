@@ -1,3 +1,4 @@
+from google import genai
 from google.genai import types
 from functions.get_files_info import get_files_info
 from functions.get_file_content import get_file_content, MAX_CHARS
